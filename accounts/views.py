@@ -5,12 +5,15 @@ from django.contrib import auth
 # Create your views here.
 def signup(request):
   if request.method == 'POST':
-    if request.POST['password'] == request.POST['confirm-password']:
+    password = request.POST['password']
+    username = request.POST['username']
+
+    if password == request.POST['confirm-password']:
       try:
-        user = User.objects.get(username=request.POST['username'])
+        user = User.objects.get(username=username)
         return render(request, 'accounts/signup.html', {'error': 'Username has already been taken'})
       except User.DoesNotExist:
-        user = User.objects.create_user(request.POST['username'], password=request.POST['password'])
+        user = User.objects.create_user(username, password)
         auth.login(request, user)
         return redirect('home')
     else:
@@ -19,7 +22,20 @@ def signup(request):
     return render(request, 'accounts/signup.html')
 
 def login(request):
-  return render(request, 'accounts/login.html')
+  if request.method == 'POST':
+    username = request.POST['username']
+    password = request.POST['password']
+
+    user = auth.authenticate(username=username, password=password)
+
+    if user is not None:
+      auth.login(request, user)
+      return redirect('home')
+    else:
+      return render(request, 'accounts/login.html', {'error': 'Username or Password is incorrect.'})
+
+  else:
+    return render(request, 'accounts/login.html')
 
 def logout(request):
   # TODO Need to route to homepage
